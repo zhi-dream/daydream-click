@@ -90,7 +90,7 @@ namespace daydream_click
             // btnMouseAppend
             // 
             this.btnMouseAppend.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnMouseAppend.Location = new System.Drawing.Point(6, 1012);
+            this.btnMouseAppend.Location = new System.Drawing.Point(6, 1010);
             this.btnMouseAppend.Name = "btnMouseAppend";
             this.btnMouseAppend.Size = new System.Drawing.Size(762, 62);
             this.btnMouseAppend.TabIndex = 1;
@@ -130,7 +130,7 @@ namespace daydream_click
             // 
             // btnKeyboardAppend
             // 
-            this.btnKeyboardAppend.Location = new System.Drawing.Point(6, 1012);
+            this.btnKeyboardAppend.Location = new System.Drawing.Point(6, 1010);
             this.btnKeyboardAppend.Name = "btnKeyboardAppend";
             this.btnKeyboardAppend.Size = new System.Drawing.Size(762, 62);
             this.btnKeyboardAppend.TabIndex = 3;
@@ -144,6 +144,7 @@ namespace daydream_click
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(818, 1162);
             this.Controls.Add(this.tabMenu);
+            this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "DaydreamClick";

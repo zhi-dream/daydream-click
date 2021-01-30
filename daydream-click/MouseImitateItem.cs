@@ -1,5 +1,5 @@
-using System;
 using System.Drawing;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace daydream_click
@@ -29,32 +29,35 @@ namespace daydream_click
         private readonly int _index;
         private readonly string _name;
         private readonly string _operate;
-        private readonly string _positionX;
-        private readonly string _positionY;
+        private string _positionX;
+        private string _positionY;
         private readonly string _interval;
-        private readonly Keys _hotkey;
+        private Keys _hotkey;
+        private MouseImitateJob _mouseImitateJob;
 
-        public delegate void RemoveEventHandler(object sender, EventArgs e,int removeIndex);
+        public delegate void RemoveEventHandler(int removeIndex);
 
-        private MouseImitateItem(int index,RemoveEventHandler removeEventHandler)
+        public delegate void SetUpSwitchHotkeyEventHandler(int index,Keys keys);
+        
+        public MouseImitateItem(int index,RemoveEventHandler removeEventHandler,SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler)
         {
             _index = index;
             _name = "模拟"+index;
             _operate = "左键";
             _hotkey = Keys.None;
-            InitializeComponent(0,removeEventHandler);
+            InitializeComponent(0,removeEventHandler,setUpSwitchHotkeyEventHandler);
         }
         
-        private MouseImitateItem(int offset, int index,RemoveEventHandler removeEventHandler)
+        public MouseImitateItem(int offset, int index,RemoveEventHandler removeEventHandler,SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler)
         {
             _index = index;
             _name = "模拟"+index;
             _operate = "左键";
             _hotkey = Keys.None;
-            InitializeComponent(offset,removeEventHandler);
+            InitializeComponent(offset,removeEventHandler,setUpSwitchHotkeyEventHandler);
         }
         
-        private MouseImitateItem(int offset,int index,string name, string operate, string positionX, string positionY, string interval, Keys hotkey,RemoveEventHandler removeEventHandler)
+        public MouseImitateItem(int offset,int index,string name, string operate, string positionX, string positionY, string interval, Keys hotkey,RemoveEventHandler removeEventHandler,SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler)
         {
             _index = index;
             _name = name;
@@ -63,25 +66,52 @@ namespace daydream_click
             _positionY = positionY;
             _interval = interval;
             _hotkey = hotkey;
-            InitializeComponent(offset,removeEventHandler);
+            InitializeComponent(offset,removeEventHandler,setUpSwitchHotkeyEventHandler);
         }
 
-        public static MouseImitateItem GetMouseImitateItem(int index,RemoveEventHandler removeEventHandler)
+        public void JobStop()
         {
-            return new(index,removeEventHandler);
-        }
-
-        public static MouseImitateItem GetMouseImitateItem(int offset,int index,RemoveEventHandler removeEventHandler)
-        {
-            return new(offset,index,removeEventHandler);
+            if (_mouseImitateJob == null) return;
+            _mouseImitateJob.Stop();
+            _btnMouseSwitch.Text = "开启";
         }
         
-        public static MouseImitateItem GetMouseImitateItem(int offset,int index,string name, string operate, string positionX, string positionY, string interval, Keys hotkey,RemoveEventHandler removeEventHandler)
+        public void JobStart()
         {
-            return new(offset,index,name,operate,positionX,positionY,interval,hotkey,removeEventHandler);
+            if (_txtMousePositionX.Text.Trim().Length==0)
+            {
+                MessageBox.Show("请定位点击坐标。","提示",MessageBoxButtons.OK);//,MessageBoxIcon.Information
+                return;
+            }
+            if (_txtMouseInterval.Text.Trim().Length == 0)
+            {
+                MessageBox.Show("请输入时间间隙。", "提示", MessageBoxButtons.OK);
+                return;
+            }
+            _mouseImitateJob = new MouseImitateJob(
+                _cboMouseOperate.SelectedItem.ToString(),
+                int.Parse(_txtMousePositionX.Text.Trim()),
+                int.Parse(_txtMousePositionY.Text.Trim()),
+                int.Parse(_txtMouseInterval.Text.Trim())
+            );
+            new Thread(_mouseImitateJob.Execute).Start();
+            _btnMouseSwitch.Text = "结束";
         }
         
-        private void InitializeComponent(int offset,RemoveEventHandler removeEventHandler){
+        public void JobSwitch()
+        {
+            switch (_btnMouseSwitch.Text)
+            {
+                case "开启":
+                    JobStart();
+                    break;
+                case "结束":
+                    JobStop();
+                    break;
+            }
+        }
+        
+        private void InitializeComponent(int offset,RemoveEventHandler removeEventHandler,SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler){
 
             GrpMouseItem = new GroupBox();
             _lblMouseOperate = new Label();
@@ -190,7 +220,6 @@ namespace daydream_click
             _cboMouseOperate.Location = new Point(160, 43);
             _cboMouseOperate.Cursor = Cursors.Hand;
             _cboMouseOperate.DropDownStyle = ComboBoxStyle.DropDownList;
-            _cboMouseOperate.FlatStyle = FlatStyle.Flat;
             _cboMouseOperate.Items.AddRange(new object[] {"左键", "右键"});
             _cboMouseOperate.TabIndex = 1;
             _cboMouseOperate.SelectedIndex = _operate=="左键"?0:1;
@@ -238,13 +267,13 @@ namespace daydream_click
             
             _txtMouseHotkey.Name = "_txtMouseHotkey";
             _txtMouseHotkey.Size = new Size(120, 35);
-            _txtMouseHotkey.Location = new Point(630, 109);
+            _txtMouseHotkey.Location = _hotkey!=Keys.None?new Point(630, 115):new Point(630, 103);
             _txtMouseHotkey.ReadOnly = true;
             _txtMouseHotkey.TabIndex = 0;
             _txtMouseHotkey.TabStop = false;
-            _txtMouseHotkey.Text = _hotkey!=Keys.None?"Alt+"+_hotkey:_hotkey.ToString();
+            _txtMouseHotkey.Text = _hotkey!=Keys.None?KeyModifiers.Shift+"+"+_hotkey:_hotkey.ToString();
             _txtMouseHotkey.TextAlign = HorizontalAlignment.Center;
-            _txtMouseHotkey.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            _txtMouseHotkey.Font = _hotkey!=Keys.None?new Font("宋体", 6F, FontStyle.Regular, GraphicsUnit.Point, 134):new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             _txtMouseHotkey.BorderStyle = BorderStyle.None;
             
             _btnMousePosition.Name = "_btnMousePosition";
@@ -258,7 +287,12 @@ namespace daydream_click
             _btnMousePosition.BackColor = Color.Transparent;
             _btnMousePosition.Click += (_, _) =>
             {
-                // todo 弹出获取定位窗口
+                var getPositionBox = new GetPositionBox(GrpMouseItem.Text==string.Empty?"定位":GrpMouseItem.Text+"·定位","Alt+S");
+                getPositionBox.ShowDialog();
+                _txtMousePositionX.Text = getPositionBox.PositionX.ToString();
+                _txtMousePositionY.Text = getPositionBox.PositionY.ToString();
+                _positionX = getPositionBox.PositionX.ToString();
+                _positionY = getPositionBox.PositionY.ToString();
             };
             
             _btnMouseRemove.Name = "_btnMouseRemove";
@@ -270,9 +304,9 @@ namespace daydream_click
             _btnMouseRemove.Text = "删除";
             _btnMouseRemove.UseVisualStyleBackColor = false;
             _btnMouseRemove.BackColor = Color.Transparent;
-            _btnMouseRemove.Click += (o,e) =>
+            _btnMouseRemove.Click += (_,_) =>
             {
-                removeEventHandler(o,e,_index);
+                removeEventHandler(_index);
             };
             
             _btnMouseRename.Name = "_btnMouseRename";
@@ -286,7 +320,12 @@ namespace daydream_click
             _btnMouseRename.BackColor = Color.Transparent;
             _btnMouseRename.Click += (_, _) =>
             {
-                // todo 弹出模拟项命名窗口
+                var inputPromptBox = new InputPromptBox(GrpMouseItem.Text==string.Empty?"命名":GrpMouseItem.Text+"·命名","请输入名称：",GrpMouseItem.Text);
+                inputPromptBox.ShowDialog();
+                if (inputPromptBox.Flag)
+                {
+                    GrpMouseItem.Text = inputPromptBox.Result;
+                }
             };
 
             _btnMouseSetUp.Name = "_btnMouseSetUp";
@@ -300,7 +339,14 @@ namespace daydream_click
             _btnMouseSetUp.UseVisualStyleBackColor = false;
             _btnMouseSetUp.Click += (_, _) =>
             {
-                // todo 弹出快捷键设置窗口
+                var setUpHotkeyBox = new SetUpHotkeyBox(GrpMouseItem.Text==string.Empty?"设置":GrpMouseItem.Text+"·设置",KeyModifiers.Shift,_hotkey);
+                setUpHotkeyBox.ShowDialog();
+                if (!setUpHotkeyBox.Flag) return;
+                _hotkey = setUpHotkeyBox.Hotkey;
+                _txtMouseHotkey.Text = _hotkey!=Keys.None?$"{KeyModifiers.Shift}+{Utils.KeysChangeChar(setUpHotkeyBox.Hotkey)}":KeyModifiers.Shift.ToString();
+                _txtMouseHotkey.Location = _hotkey!=Keys.None?new Point(630, 115):new Point(630, 103);
+                _txtMouseHotkey.Font = _hotkey!=Keys.None?new Font("宋体", 6F, FontStyle.Regular, GraphicsUnit.Point, 134):new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+                setUpSwitchHotkeyEventHandler(_index,_hotkey);
             };
             
             _btnMouseSwitch.Name = "_btnMouseSwitch";
@@ -310,11 +356,11 @@ namespace daydream_click
             _btnMouseSwitch.BackColor = Color.Transparent;
             _btnMouseSwitch.ForeColor = SystemColors.ControlText;
             _btnMouseSwitch.TabIndex = 4;
-            _btnMouseSwitch.Text = "开始";
+            _btnMouseSwitch.Text = "开启";
             _btnMouseSwitch.UseVisualStyleBackColor = false;
             _btnMouseSwitch.Click += (_, _) =>
             {
-                // todo 调用开启鼠标任务方法
+                JobSwitch();
             };
 
         }
@@ -322,8 +368,8 @@ namespace daydream_click
         public GroupBox GrpMouseItem { get; private set; }
 
         public Label LblMouseOperate => _lblMouseOperate;
-
-        public Label LblMousePosition1 => _lblMousePosition;
+        
+        public Label LblMousePosition => _lblMousePosition;
 
         public Label LblMousePositionX => _lblMousePositionX;
 
@@ -367,6 +413,13 @@ namespace daydream_click
 
         public string Interval => _interval;
 
-        public Keys Hotkey => _hotkey;
+        public int HotkeyId { get; set; }
+
+        public Keys Hotkey
+        {
+            get => _hotkey;
+            set => _hotkey = value;
+        }
+        
     }
 }
