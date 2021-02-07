@@ -30,17 +30,25 @@ namespace daydream_click
             {
                 try
                 {
-                    // MouseSimulate.MouseMoveToPoint(new Point(_positionX,_positionY));
-                    Console.WriteLine("模拟鼠标移动："+_positionX+_positionY);
+                    Drive.MouseMove(_positionX,_positionY);
+                    Console.WriteLine("模拟鼠标移动：X"+_positionX+"Y"+_positionY);
                     switch (_operate)
                     {
                         case "左键":
-                            // MouseSimulate.MouseSimulateLeftClick();
-                            Console.WriteLine("模拟鼠标点击：左键");
+                            Drive.MouseLeftKeyClickDown();
+                            Console.WriteLine("模拟鼠标左键：按下");
+                            Thread.Sleep(new Random().Next(50,100));
+                            Drive.MouseLeftKeyClickUp();
+                            Console.WriteLine("模拟鼠标左键：弹起");
+                            Thread.Sleep(new Random().Next(50,100));
                             break;
                         case "右键":
-                            // MouseSimulate.MouseSimulateRightClick();
-                            Console.WriteLine("模拟鼠标点击：右键");
+                            Drive.MouseRightKeyClickDown();
+                            Console.WriteLine("模拟鼠标右键：按下");
+                            Thread.Sleep(new Random().Next(50,100));
+                            Drive.MouseRightKeyClickUp();
+                            Console.WriteLine("模拟鼠标右键：弹起");
+                            Thread.Sleep(new Random().Next(50,100));
                             break;
                     }
                     Thread.Sleep(_interval);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -10,13 +11,9 @@ namespace daydream_click
         
         private Label _lblKeyMessage;
 
-        private readonly string _title;
-
-        private List<Keys> _operate;
-
         public GetKeyBox(string title)
         {
-            _title = title;
+            Title = title;
             InitializeComponent();
         }
 
@@ -28,17 +25,18 @@ namespace daydream_click
             Controls.Add(_lblKeyMessageTitle);
             Controls.Add(_lblKeyMessage);
             
+            Icon = (Icon) new ComponentResourceManager(typeof(MainForm)).GetObject("$this.Icon");
             Size = new Size(700, 350);
             StartPosition = FormStartPosition.CenterScreen;
             MaximizeBox = false;
             MinimizeBox = false;
             KeyPreview = true;
-            Text = _title;
+            Text = Title;
             KeyDown += (_, e) =>
             {
-                _operate ??= new List<Keys>();
-                if (_operate.Contains(e.KeyCode)) return;
-                _operate.Add(e.KeyCode);
+                Operate ??= new List<Keys>();
+                if (Operate.Contains(e.KeyCode)) return;
+                Operate.Add(e.KeyCode);
             };
             KeyUp += (_, _) =>
             {
@@ -65,8 +63,8 @@ namespace daydream_click
         
         public Label LblKeyMessage => _lblKeyMessage;
 
-        public string Title => _title;
+        public string Title { get; }
 
-        public List<Keys> Operate => _operate;
+        public List<Keys> Operate { get; private set; }
     }
 }

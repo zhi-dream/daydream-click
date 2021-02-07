@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace daydream_click
 {
@@ -11,111 +13,232 @@ namespace daydream_click
         public MainForm()
         {
             InitializeComponent();
-
-            _hotkeyIds = new Dictionary<int, string>{{0,"默认"},{101,"定位"}};
-
-            var mouseImitateItem = new MouseImitateItem(_nextMouseItemIndex, RemoveMouseEventHandler,SetUpMouseSwitchHotkeyEventHandler);
-            _mouseImitateItems = new Dictionary<int, MouseImitateItem> {{_nextMouseItemIndex, mouseImitateItem}};
-            pnlMouse.Controls.Add(mouseImitateItem.GrpMouseItem);
-            _nextMouseItemIndex += 1;
-
-            var keyboardImitateItem = new KeyboardImitateItem(_nextKeyboardItemIndex, RemoveKeyboardEventHandler,SetUpKeyBoardSwitchHotkeyEventHandler);
-            _keyboardImitateItems = new Dictionary<int, KeyboardImitateItem>
-                {{_nextKeyboardItemIndex, keyboardImitateItem}};
-            pnlKeyboard.Controls.Add(keyboardImitateItem.GrpKeyboardItem);
-            _nextKeyboardItemIndex += 1;
+            Hotkey.RegisterHotKey(Handle, 100, KeyModifiers.Shift,
+                Keys.D);
+            _imitateItem = new ImitateItem();
+            Drive.Initial();
         }
 
-        private int _nextMouseItemIndex = 1;
-        private readonly Dictionary<int, MouseImitateItem> _mouseImitateItems;
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            if (!File.Exists("imitateItem.json"))
+            {
+                Initial();
+            }
+            else
+            {
+                var imitateItem = new ImitateItem();
+                try
+                {
+                    imitateItem = JsonConvert.DeserializeObject<ImitateItem>(File.ReadAllText("imitateItem.json"));
+                }
+                catch (Exception)
+                {
+                    Initial();
+                }
+                
+                foreach (var mouseImitateItem in from mouseImitate in imitateItem.MouseImitateItems.Values
+                    let count = pnlMouse.Controls.Count
+                    select new MouseImitateItem(count * 220, mouseImitate.Index, mouseImitate.Name,
+                        mouseImitate.Operate, mouseImitate.PositionX, mouseImitate.PositionY, mouseImitate.Interval,
+                        mouseImitate.Hotkey, RemoveMouseEventHandler,
+                        SetUpMouseSwitchHotkeyEventHandler))
+                {
+                    Hotkey.RegisterHotKey(Handle, mouseImitateItem.HotkeyId, KeyModifiers.Alt,
+                        mouseImitateItem.Hotkey);
 
-        private int _nextKeyboardItemIndex = 1;
-        private readonly Dictionary<int, KeyboardImitateItem> _keyboardImitateItems;
+                    pnlMouse.Controls.Add(mouseImitateItem.GrpMouseItem);
 
-        private readonly Dictionary<int, string> _hotkeyIds;
+                    _imitateItem.MouseImitateItems.Add(mouseImitateItem.Index, mouseImitateItem);
+                }
+
+                foreach (var keyboardImitateItem in from keyboardImitate in imitateItem.KeyboardImitateItems.Values
+                    let count = pnlKeyboard.Controls.Count
+                    select new KeyboardImitateItem(count * 220, keyboardImitate.Index, keyboardImitate.Name,
+                        keyboardImitate.Operate, keyboardImitate.Interval, keyboardImitate.Hotkey,
+                        RemoveKeyboardEventHandler,
+                        SetUpKeyBoardSwitchHotkeyEventHandler))
+                {
+                    Hotkey.RegisterHotKey(Handle, keyboardImitateItem.HotkeyId, KeyModifiers.Ctrl,
+                        keyboardImitateItem.Hotkey);
+
+                    pnlKeyboard.Controls.Add(keyboardImitateItem.GrpKeyboardItem);
+
+                    _imitateItem.KeyboardImitateItems.Add(keyboardImitateItem.Index, keyboardImitateItem);
+                }
+            }
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            foreach (var mouseImitateItem in _imitateItem.MouseImitateItems.Values)
+            {
+                mouseImitateItem.Save();
+            }
+
+            foreach (var keyboardImitateItem in _imitateItem.KeyboardImitateItems.Values)
+            {
+                keyboardImitateItem.Save();
+            }
+
+            foreach (var hotkeyId in _imitateItem.HotkeyIds)
+            {
+                Hotkey.UnregisterHotKey(Handle, hotkeyId.Key);
+            }
+
+            File.WriteAllText("imitateItem.json", JsonConvert.SerializeObject(_imitateItem));
+        }
+
+        private readonly ImitateItem _imitateItem;
+
+        private void Initial()
+        {
+            _imitateItem.HotkeyIds = new Dictionary<int, string> {{0, "默认"}, {100, "停止"},{101, "定位"}};
+            _imitateItem.NextMouseItemIndex = 1;
+
+            var mouseImitateItem = new MouseImitateItem(_imitateItem.NextMouseItemIndex, RemoveMouseEventHandler,
+                SetUpMouseSwitchHotkeyEventHandler);
+
+            _imitateItem.MouseImitateItems = new Dictionary<int, MouseImitateItem>
+                {{_imitateItem.NextMouseItemIndex, mouseImitateItem}};
+
+            pnlMouse.Controls.Add(mouseImitateItem.GrpMouseItem);
+
+            _imitateItem.NextMouseItemIndex += 1;
+
+            _imitateItem.NextKeyboardItemIndex = 1;
+
+            var keyboardImitateItem = new KeyboardImitateItem(_imitateItem.NextKeyboardItemIndex,
+                RemoveKeyboardEventHandler,
+                SetUpKeyBoardSwitchHotkeyEventHandler);
+
+            _imitateItem.KeyboardImitateItems = new Dictionary<int, KeyboardImitateItem>
+                {{_imitateItem.NextKeyboardItemIndex, keyboardImitateItem}};
+
+            pnlKeyboard.Controls.Add(keyboardImitateItem.GrpKeyboardItem);
+
+            _imitateItem.NextKeyboardItemIndex += 1;
+        }
 
         private void btnMouseAppend_Click(object sender, EventArgs e)
         {
-            var count = _mouseImitateItems.Count;
-            var mouseImitateItem = new MouseImitateItem(count * 220, _nextMouseItemIndex, RemoveMouseEventHandler,SetUpMouseSwitchHotkeyEventHandler);
+            var count = _imitateItem.MouseImitateItems.Count;
+            
+            var mouseImitateItem = new MouseImitateItem(count * 220, _imitateItem.NextMouseItemIndex,
+                RemoveMouseEventHandler,
+                SetUpMouseSwitchHotkeyEventHandler);
+
             pnlMouse.Controls.Add(mouseImitateItem.GrpMouseItem);
-            _mouseImitateItems.Add(_nextMouseItemIndex, mouseImitateItem);
-            _nextMouseItemIndex += 1;
+
+            _imitateItem.MouseImitateItems.Add(_imitateItem.NextMouseItemIndex, mouseImitateItem);
+            
+            _imitateItem.NextMouseItemIndex += 1;
         }
 
         private void RemoveMouseEventHandler(int removeIndex)
         {
-            foreach (var mouseImitateItem in _mouseImitateItems.Values.Where(mouseImitateItem => mouseImitateItem.Index > removeIndex))
+            foreach (var mouseImitateItem in _imitateItem.MouseImitateItems.Values.Where(mouseImitateItem =>
+                mouseImitateItem.Index > removeIndex))
             {
                 mouseImitateItem.GrpMouseItem.Location = new Point(mouseImitateItem.GrpMouseItem.Location.X,
                     mouseImitateItem.GrpMouseItem.Location.Y - 220);
             }
-            _mouseImitateItems[removeIndex].JobStop();
-            Hotkey.UnregisterHotKey(Handle,_mouseImitateItems[removeIndex].HotkeyId);
-            _mouseImitateItems.Remove(removeIndex);
-            pnlKeyboard.Controls.Remove(_mouseImitateItems[removeIndex].GrpMouseItem);
+            
+            _imitateItem.MouseImitateItems[removeIndex].JobStop();
+            
+            pnlMouse.Controls.Remove(_imitateItem.MouseImitateItems[removeIndex].GrpMouseItem);
+
+            Hotkey.UnregisterHotKey(Handle, _imitateItem.MouseImitateItems[removeIndex].HotkeyId);
+            _imitateItem.HotkeyIds.Remove(_imitateItem.MouseImitateItems[removeIndex].HotkeyId);
+            
+            _imitateItem.MouseImitateItems.Remove(removeIndex);
+        }
+
+        private bool SetUpMouseSwitchHotkeyEventHandler(int index, Keys keys)
+        {
+
+            if (_imitateItem.MouseImitateItems.Values.Count(mouseImitateItem => mouseImitateItem.Hotkey == keys)>1)
+            {
+                MessageBox.Show("此快捷键已存在\n相同快捷键只有第一个会生效\n请重新设置", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return false;
+            }
+
+            if (_imitateItem.MouseImitateItems[index].HotkeyId != default)
+            {
+                Hotkey.UnregisterHotKey(Handle, _imitateItem.MouseImitateItems[index].HotkeyId);
+                _imitateItem.HotkeyIds.Remove(_imitateItem.MouseImitateItems[index].HotkeyId);
+            }
+
+            int hotkeyId;
+            do
+            {
+                hotkeyId = Utils.GenerateHotkeyId();
+                if (_imitateItem.HotkeyIds.ContainsKey(hotkeyId)) continue;
+                _imitateItem.HotkeyIds.Add(hotkeyId, "鼠标");
+                _imitateItem.MouseImitateItems[index].HotkeyId = hotkeyId;
+                break;
+            } while (true);
+
+            Hotkey.RegisterHotKey(Handle, hotkeyId, KeyModifiers.Alt, keys);
+            return true;
         }
 
         private void btnKeyboardAppend_Click(object sender, EventArgs e)
         {
-            var count = _keyboardImitateItems.Count;
+            var count = _imitateItem.KeyboardImitateItems.Count;
             var keyboardImitateItem =
-                new KeyboardImitateItem(count * 220, _nextKeyboardItemIndex, RemoveKeyboardEventHandler,SetUpKeyBoardSwitchHotkeyEventHandler);
+                new KeyboardImitateItem(count * 220, _imitateItem.NextKeyboardItemIndex, RemoveKeyboardEventHandler,
+                    SetUpKeyBoardSwitchHotkeyEventHandler);
             pnlKeyboard.Controls.Add(keyboardImitateItem.GrpKeyboardItem);
-            _keyboardImitateItems.Add(_nextKeyboardItemIndex, keyboardImitateItem);
-            _nextKeyboardItemIndex += 1;
+            _imitateItem.KeyboardImitateItems.Add(_imitateItem.NextKeyboardItemIndex, keyboardImitateItem);
+            _imitateItem.NextKeyboardItemIndex += 1;
         }
 
         private void RemoveKeyboardEventHandler(int removeIndex)
         {
-            foreach (var keyboardImitateItem in _keyboardImitateItems.Values.Where(keyboardImitateItem => keyboardImitateItem.Index > removeIndex))
+            foreach (var keyboardImitateItem in _imitateItem.KeyboardImitateItems.Values.Where(keyboardImitateItem =>
+                keyboardImitateItem.Index > removeIndex))
             {
                 keyboardImitateItem.GrpKeyboardItem.Location = new Point(
                     keyboardImitateItem.GrpKeyboardItem.Location.X,
                     keyboardImitateItem.GrpKeyboardItem.Location.Y - 220);
             }
-            _keyboardImitateItems[removeIndex].JobStop();
-            Hotkey.UnregisterHotKey(Handle,_keyboardImitateItems[removeIndex].HotkeyId);
-            _keyboardImitateItems.Remove(removeIndex);
-            pnlKeyboard.Controls.Remove(_keyboardImitateItems[removeIndex].GrpKeyboardItem);
-        }
-        
-        private void SetUpMouseSwitchHotkeyEventHandler(int index,Keys keys)
-        {
-            if (_mouseImitateItems[index].HotkeyId!=default)
-            {
-                Hotkey.UnregisterHotKey(Handle, _mouseImitateItems[index].HotkeyId);
-                _hotkeyIds.Remove(_mouseImitateItems[index].HotkeyId);
-            }
-            int hotkeyId;
-            do
-            {
-                hotkeyId = Utils.GenerateHotkeyId();
-                if (_hotkeyIds.ContainsKey(hotkeyId)) continue;
-                _hotkeyIds.Add(hotkeyId,"鼠标");
-                _mouseImitateItems[index].HotkeyId = hotkeyId;
-                break;
-            } while (true);
-            Hotkey.RegisterHotKey(Handle, hotkeyId, KeyModifiers.Shift, keys);
+
+            _imitateItem.KeyboardImitateItems[removeIndex].JobStop();
+            pnlKeyboard.Controls.Remove(_imitateItem.KeyboardImitateItems[removeIndex].GrpKeyboardItem);
+            
+            Hotkey.UnregisterHotKey(Handle, _imitateItem.KeyboardImitateItems[removeIndex].HotkeyId);
+            _imitateItem.HotkeyIds.Remove(_imitateItem.KeyboardImitateItems[removeIndex].HotkeyId);
+            
+            _imitateItem.KeyboardImitateItems.Remove(removeIndex);
         }
 
-        private void SetUpKeyBoardSwitchHotkeyEventHandler(int index, Keys keys)
+        private bool SetUpKeyBoardSwitchHotkeyEventHandler(int index, Keys keys)
         {
-            if (_keyboardImitateItems[index].HotkeyId!=default)
+            if (_imitateItem.KeyboardImitateItems.Values.Count(keyboardImitateItem => keyboardImitateItem.Hotkey == keys)>1)
             {
-                Hotkey.UnregisterHotKey(Handle, _keyboardImitateItems[index].HotkeyId);
-                _hotkeyIds.Remove(_keyboardImitateItems[index].HotkeyId);
+                MessageBox.Show("此快捷键已存在\n相同快捷键只有第一个会生效\n请重新设置", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return false;
             }
+            
+            if (_imitateItem.KeyboardImitateItems[index].HotkeyId != default)
+            {
+                Hotkey.UnregisterHotKey(Handle, _imitateItem.KeyboardImitateItems[index].HotkeyId);
+                _imitateItem.HotkeyIds.Remove(_imitateItem.KeyboardImitateItems[index].HotkeyId);
+            }
+
             int hotkeyId;
             do
             {
                 hotkeyId = Utils.GenerateHotkeyId();
-                if (_hotkeyIds.ContainsKey(hotkeyId)) continue;
-                _hotkeyIds.Add(hotkeyId,"键盘");
-                _keyboardImitateItems[index].HotkeyId = hotkeyId;
+                if (_imitateItem.HotkeyIds.ContainsKey(hotkeyId)) continue;
+                _imitateItem.HotkeyIds.Add(hotkeyId, "键盘");
+                _imitateItem.KeyboardImitateItems[index].HotkeyId = hotkeyId;
                 break;
             } while (true);
+
             Hotkey.RegisterHotKey(Handle, hotkeyId, KeyModifiers.Ctrl, keys);
+            return true;
         }
 
         protected override void WndProc(ref Message m)
@@ -125,22 +248,41 @@ namespace daydream_click
             {
                 case hotkey:
                     var hotkeyId = m.WParam.ToInt32();
-                    if (_hotkeyIds[hotkeyId]=="鼠标")
+
+                    if (_imitateItem.HotkeyIds[hotkeyId] == "停止")
                     {
-                        foreach (var mouseImitateItem in _mouseImitateItems.Values.Where(mouseImitateItem => mouseImitateItem.HotkeyId==hotkeyId))
+                        foreach (var mouseImitateItem in _imitateItem.MouseImitateItems.Values)
+                        {
+                            mouseImitateItem.JobStop();
+                        }
+                        foreach (var keyboardImitateItem in _imitateItem.KeyboardImitateItems.Values)
+                        {
+                            keyboardImitateItem.JobStop();
+                        }
+                    }
+                    
+                    if (_imitateItem.HotkeyIds[hotkeyId] == "鼠标")
+                    {
+                        foreach (var mouseImitateItem in _imitateItem.MouseImitateItems.Values.Where(mouseImitateItem =>
+                            mouseImitateItem.HotkeyId == hotkeyId))
                         {
                             mouseImitateItem.JobSwitch();
                         }
                     }
-                    if (_hotkeyIds[hotkeyId]=="键盘")
+
+                    if (_imitateItem.HotkeyIds[hotkeyId] == "键盘")
                     {
-                        foreach (var keyboardImitateItem in _keyboardImitateItems.Values.Where(keyboardImitateItem => keyboardImitateItem.HotkeyId==hotkeyId))
+                        foreach (var keyboardImitateItem in _imitateItem.KeyboardImitateItems.Values.Where(
+                            keyboardImitateItem =>
+                                keyboardImitateItem.HotkeyId == hotkeyId))
                         {
                             keyboardImitateItem.JobSwitch();
                         }
                     }
+
                     break;
             }
+
             base.WndProc(ref m);
         }
     }

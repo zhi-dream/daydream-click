@@ -1,4 +1,4 @@
-using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -9,22 +9,16 @@ namespace daydream_click
         private Label _lblPositionMessage;
         private Label _lblPositionHotkey;
 
-        private readonly string _title;
-        private readonly string _hotkeySwitch;
-
-        private int _positionX;
-        private int _positionY;
-
         public GetPositionBox(string title, string hotkeySwitch)
         {
-            _title = title;
-            _hotkeySwitch = hotkeySwitch;
+            Title = title;
+            HotkeySwitch = hotkeySwitch;
             InitializeComponent();
         }
 
         private void InitializeComponent()
         {
-            Hotkey.RegisterHotKey(Handle, 101, KeyModifiers.Alt, Keys.S);
+            Hotkey.RegisterHotKey(Handle, 101, KeyModifiers.Shift, Keys.S);
             
             _lblPositionMessage = new Label();
             _lblPositionHotkey = new Label();
@@ -32,11 +26,12 @@ namespace daydream_click
             Controls.Add(_lblPositionMessage);
             Controls.Add(_lblPositionHotkey);
             
+            Icon = (Icon) new ComponentResourceManager(typeof(MainForm)).GetObject("$this.Icon");
             Size = new Size(700, 350);
             StartPosition = FormStartPosition.CenterScreen;
             MaximizeBox = false;
             MinimizeBox = false;
-            Text = _title;
+            Text = Title;
             FormClosing += (_, _) =>
             {
                 Hotkey.UnregisterHotKey(Handle, 101);
@@ -52,7 +47,7 @@ namespace daydream_click
             _lblPositionHotkey.Size = new Size(700, 82);
             _lblPositionHotkey.Location = new Point(-15, 135);
             _lblPositionHotkey.TabIndex = 0;
-            _lblPositionHotkey.Text = "按下【"+_hotkeySwitch+"】即可";
+            _lblPositionHotkey.Text = "按下【"+HotkeySwitch+"】即可";
             _lblPositionHotkey.TextAlign = ContentAlignment.MiddleCenter;
             _lblPositionHotkey.Font = new Font("宋体", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
             
@@ -67,8 +62,8 @@ namespace daydream_click
                     switch (m.WParam.ToInt32())
                     {
                         case 101:
-                            _positionX = MousePosition.X;
-                            _positionY = MousePosition.Y;
+                            PositionX = MousePosition.X;
+                            PositionY = MousePosition.Y;
                             Close();
                             break;
                     }
@@ -81,12 +76,12 @@ namespace daydream_click
 
         public Label LblPositionHotkey => _lblPositionHotkey;
 
-        public string Title => _title;
+        public string Title { get; }
 
-        public string HotkeySwitch => _hotkeySwitch;
+        public string HotkeySwitch { get; }
 
-        public int PositionX => _positionX;
+        public int PositionX { get; private set; }
 
-        public int PositionY => _positionY;
+        public int PositionY { get; private set; }
     }
 }

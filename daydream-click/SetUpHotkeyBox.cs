@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -13,18 +12,12 @@ namespace daydream_click
         private Button _btnSetUpHotkeyClear;
         private Button _btnSetUpHotkeySave;
         private Button _btnSetUpHotkeyCancel;
-        
-        private readonly string _title;
-
-        private readonly KeyModifiers _keyModifiers;
-
-        private Keys _hotkey;
 
         public SetUpHotkeyBox(string title, KeyModifiers keyModifiers,Keys hotkey)
         {
-            _title = title;
-            _keyModifiers = keyModifiers;
-            _hotkey = hotkey;
+            Title = title;
+            KeyModifiers = keyModifiers;
+            Hotkey = hotkey;
             InitializeComponent();
         }
 
@@ -43,16 +36,16 @@ namespace daydream_click
             Controls.Add(_btnSetUpHotkeyClear);
             Controls.Add(_btnSetUpHotkeySave);
             Controls.Add(_btnSetUpHotkeyCancel);
-            
+            Icon = (Icon) new ComponentResourceManager(typeof(MainForm)).GetObject("$this.Icon");
             Size = new Size(700, 350);
             StartPosition = FormStartPosition.CenterScreen;
             MaximizeBox = false;
             MinimizeBox = false;
             KeyPreview = true;
-            Text = _title;
+            Text = Title;
             KeyDown += (_, e) =>
             {
-                _hotkey = e.KeyCode;
+                Hotkey = e.KeyCode;
                 Utils.KeysChangeChar(e.KeyCode);
                 _txtHotkey.Text = Utils.KeysChangeChar(e.KeyCode);
             };
@@ -67,11 +60,10 @@ namespace daydream_click
             _lblKeyModifiers.Size = new Size(300, 82);
             _lblKeyModifiers.Location = new Point(-15, 85);
             _lblKeyModifiers.TabIndex = 0;
-            _lblKeyModifiers.Text = _keyModifiers+"+";
+            _lblKeyModifiers.Text = KeyModifiers+"+";
             _lblKeyModifiers.TextAlign = ContentAlignment.MiddleRight;
             _lblKeyModifiers.Font = new Font("宋体", 12F, FontStyle.Bold, GraphicsUnit.Point, 134);
             
-            _txtHotkey.Name = "_txtHotkey";
             _txtHotkey.BackColor = SystemColors.Menu;
             _txtHotkey.Multiline = true;
             _txtHotkey.ReadOnly = true;
@@ -80,10 +72,9 @@ namespace daydream_click
             _txtHotkey.Location = new Point(300, 101);
             _txtHotkey.TabIndex = 0;
             _txtHotkey.TabStop = false;
-            _txtHotkey.Text = _hotkey.ToString();
+            _txtHotkey.Text = Hotkey.ToString();
             _txtHotkey.TextAlign = HorizontalAlignment.Center;
-
-            _btnSetUpHotkeyClear.Name = "_btnSetUpHotkeySave";
+            
             _btnSetUpHotkeyClear.Size = new Size(175, 50);
             _btnSetUpHotkeyClear.Location = new Point(25, 190);
             _btnSetUpHotkeyClear.TabIndex = 2;
@@ -92,10 +83,9 @@ namespace daydream_click
             _btnSetUpHotkeyClear.Click += (_, _) =>
             {
                 _txtHotkey.Text = Keys.None.ToString();
-                _hotkey = Keys.None;
+                Hotkey = Keys.None;
             };
             
-            _btnSetUpHotkeySave.Name = "_btnSetUpHotkeySave";
             _btnSetUpHotkeySave.Size = new Size(175, 50);
             _btnSetUpHotkeySave.Location = new Point(249, 190);
             _btnSetUpHotkeySave.TabIndex = 1;
@@ -106,8 +96,7 @@ namespace daydream_click
                 Flag = true;
                 Close();
             };
-
-            _btnSetUpHotkeyCancel.Name = "_btnSetUpHotkeyCancel";
+            
             _btnSetUpHotkeyCancel.Size = new Size(175, 50);
             _btnSetUpHotkeyCancel.Location = new Point(470, 190);
             _btnSetUpHotkeyCancel.TabIndex = 3;
@@ -131,11 +120,11 @@ namespace daydream_click
 
         public Button BtnSetUpHotkeyCancel => _btnSetUpHotkeyCancel;
 
-        public string Title => _title;
-        
-        public KeyModifiers KeyModifiers => _keyModifiers;
+        public string Title { get; }
 
-        public Keys Hotkey => _hotkey;
+        public KeyModifiers KeyModifiers { get; }
+
+        public Keys Hotkey { get; private set; }
 
         public bool Flag { get; private set; }
 

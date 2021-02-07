@@ -31,6 +31,7 @@ namespace daydream_click
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.tabMenu = new System.Windows.Forms.TabControl();
             this.pageMouse = new System.Windows.Forms.TabPage();
             this.pnlMouseParent = new System.Windows.Forms.Panel();
@@ -40,6 +41,7 @@ namespace daydream_click
             this.pnlKeyboardParent = new System.Windows.Forms.Panel();
             this.pnlKeyboard = new System.Windows.Forms.Panel();
             this.btnKeyboardAppend = new System.Windows.Forms.Button();
+            this.lblClosePrompt = new System.Windows.Forms.Label();
             this.tabMenu.SuspendLayout();
             this.pageMouse.SuspendLayout();
             this.pnlMouseParent.SuspendLayout();
@@ -138,16 +140,28 @@ namespace daydream_click
             this.btnKeyboardAppend.UseVisualStyleBackColor = true;
             this.btnKeyboardAppend.Click += new System.EventHandler(this.btnKeyboardAppend_Click);
             // 
+            // lblClosePrompt
+            // 
+            this.lblClosePrompt.Location = new System.Drawing.Point(440, 20);
+            this.lblClosePrompt.Name = "lblClosePrompt";
+            this.lblClosePrompt.Size = new System.Drawing.Size(375, 35);
+            this.lblClosePrompt.TabIndex = 1;
+            this.lblClosePrompt.Text = "【Shift+D】结束所有任务";
+            // 
             // MainForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.AutoSize = true;
             this.ClientSize = new System.Drawing.Size(818, 1162);
+            this.Controls.Add(this.lblClosePrompt);
             this.Controls.Add(this.tabMenu);
+            this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "DaydreamClick";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.tabMenu.ResumeLayout(false);
             this.pageMouse.ResumeLayout(false);
             this.pnlMouseParent.ResumeLayout(false);
@@ -155,6 +169,8 @@ namespace daydream_click
             this.pnlKeyboardParent.ResumeLayout(false);
             this.ResumeLayout(false);
         }
+
+        private System.Windows.Forms.Label lblClosePrompt;
 
         private System.Windows.Forms.Panel pnlKeyboardParent;
 

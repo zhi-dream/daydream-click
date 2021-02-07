@@ -49,7 +49,7 @@ namespace daydream_click
 
         public static string KeysSplice(IEnumerable<Keys> keys)
         {
-            var keysString = keys.Aggregate("", (current, key) => current + Utils.KeysChangeChar(key) + "+");
+            var keysString = keys.Aggregate("", (current, key) => current + KeysChangeChar(key) + "+");
             keysString = keysString.Substring(0, keysString.Length-1);
             return keysString;
         }

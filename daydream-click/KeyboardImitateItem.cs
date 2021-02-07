@@ -2,17 +2,18 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 
 namespace daydream_click
 {
     public class KeyboardImitateItem
     {
-        private Label _lblKeyboardKey;
+        private Label _lblKeyboardOperate;
         private Label _lblKeyboardInterval;
         private Label _lblKeyboardUnit;
         private Label _lblKeyboardHotkey;
 
-        private TextBox _txtKeyboardKey;
+        private TextBox _txtKeyboardOperate;
         private TextBox _txtKeyboardInterval;
         private TextBox _txtKeyboardHotkey;
 
@@ -22,32 +23,27 @@ namespace daydream_click
         private Button _btnKeyboardSetUp;
         private Button _btnKeyboardSwitch;
 
-        private readonly int _index;
-        private readonly string _name;
-        private List<Keys> _operate;
-        private readonly string _interval;
-        private Keys _hotkey;
         private KeyboardImitateJob _keyboardImitateJob;
 
         public delegate void RemoveEventHandler(int removeIndex);
 
-        public delegate void SetUpSwitchHotkeyEventHandler(int index, Keys keys);
+        public delegate bool SetUpSwitchHotkeyEventHandler(int index, Keys keys);
 
         public KeyboardImitateItem(int index, RemoveEventHandler removeEventHandler,
             SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler)
         {
-            _index = index;
-            _name = "模拟" + index;
-            _hotkey = Keys.None;
+            Index = index;
+            Name = "模拟" + index;
+            Hotkey = Keys.None;
             InitializeComponent(0, removeEventHandler, setUpSwitchHotkeyEventHandler);
         }
 
         public KeyboardImitateItem(int offset, int index, RemoveEventHandler removeEventHandler,
             SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler)
         {
-            _index = index;
-            _name = "模拟" + index;
-            _hotkey = Keys.None;
+            Index = index;
+            Name = "模拟" + index;
+            Hotkey = Keys.None;
             InitializeComponent(offset, removeEventHandler, setUpSwitchHotkeyEventHandler);
         }
 
@@ -55,37 +51,55 @@ namespace daydream_click
             Keys hotkey, RemoveEventHandler removeEventHandler,
             SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler)
         {
-            _index = index;
-            _name = name;
-            _operate = operate;
-            _interval = interval;
-            _hotkey = hotkey;
+            Index = index;
+            Name = name;
+            Operate = operate;
+            Interval = interval;
+            Hotkey = hotkey;
             InitializeComponent(offset, removeEventHandler, setUpSwitchHotkeyEventHandler);
+        }
+
+        public KeyboardImitateItem()
+        {
+        }
+
+        public void Save()
+        {
+            Name = GrpKeyboardItem.Text;
+            Interval = _txtKeyboardInterval.Text;
         }
 
         public void JobStop()
         {
-            if (_btnKeyboardSwitch == null) return;
+            if (_keyboardImitateJob == null) return;
             _keyboardImitateJob.Stop();
             _btnKeyboardSwitch.Text = "开启";
         }
 
         public void JobStart()
         {
-            if (_txtKeyboardKey.Text.Trim().Length == 0)
+            if (_txtKeyboardOperate.Text.Trim().Length == 0)
             {
-                MessageBox.Show("请捕获模拟按键。", "提示", MessageBoxButtons.OK); // ,MessageBoxIcon.Information
+                MessageBox.Show("请捕获模拟按键。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             if (_txtKeyboardInterval.Text.Trim().Length == 0)
             {
-                MessageBox.Show("请输入时间间隙。", "提示", MessageBoxButtons.OK);
+                MessageBox.Show("请输入时间间隙。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
+            if (_txtKeyboardHotkey.Text.Trim() == "None")
+            {
+                if (MessageBox.Show("还未设置开关快捷键，是否仍要开启？\n【Shift+D】可强制关闭所有任务。","提示",MessageBoxButtons.YesNo,MessageBoxIcon.Information)!=DialogResult.Yes)
+                {
+                    return;
+                }
+            }
+
             _keyboardImitateJob = new KeyboardImitateJob(
-                _operate,
+                Operate,
                 int.Parse(_txtKeyboardInterval.Text.Trim())
             );
             new Thread(_keyboardImitateJob.Execute).Start();
@@ -109,11 +123,11 @@ namespace daydream_click
             SetUpSwitchHotkeyEventHandler setUpSwitchHotkeyEventHandler)
         {
             GrpKeyboardItem = new GroupBox();
-            _lblKeyboardKey = new Label();
+            _lblKeyboardOperate = new Label();
             _lblKeyboardInterval = new Label();
             _lblKeyboardUnit = new Label();
             _lblKeyboardHotkey = new Label();
-            _txtKeyboardKey = new TextBox();
+            _txtKeyboardOperate = new TextBox();
             _txtKeyboardInterval = new TextBox();
             _txtKeyboardHotkey = new TextBox();
             _btnKeyboardKey = new Button();
@@ -122,11 +136,11 @@ namespace daydream_click
             _btnKeyboardSetUp = new Button();
             _btnKeyboardSwitch = new Button();
 
-            GrpKeyboardItem.Controls.Add(_lblKeyboardKey);
+            GrpKeyboardItem.Controls.Add(_lblKeyboardOperate);
             GrpKeyboardItem.Controls.Add(_lblKeyboardInterval);
             GrpKeyboardItem.Controls.Add(_lblKeyboardUnit);
             GrpKeyboardItem.Controls.Add(_lblKeyboardHotkey);
-            GrpKeyboardItem.Controls.Add(_txtKeyboardKey);
+            GrpKeyboardItem.Controls.Add(_txtKeyboardOperate);
             GrpKeyboardItem.Controls.Add(_txtKeyboardInterval);
             GrpKeyboardItem.Controls.Add(_txtKeyboardHotkey);
             GrpKeyboardItem.Controls.Add(_btnKeyboardKey);
@@ -134,67 +148,59 @@ namespace daydream_click
             GrpKeyboardItem.Controls.Add(_btnKeyboardRename);
             GrpKeyboardItem.Controls.Add(_btnKeyboardSetUp);
             GrpKeyboardItem.Controls.Add(_btnKeyboardSwitch);
-
-            GrpKeyboardItem.Name = "GrpKeyboardItem";
+            
             GrpKeyboardItem.Size = new Size(756, 214);
             GrpKeyboardItem.Location = new Point(3, 3 + offset);
             GrpKeyboardItem.TabIndex = 0;
             GrpKeyboardItem.TabStop = false;
-            GrpKeyboardItem.Text = _name;
+            GrpKeyboardItem.Text = Name;
             GrpKeyboardItem.Font = new Font("字体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             GrpKeyboardItem.BackColor = Color.Transparent;
-
-            _lblKeyboardKey.Name = "_lblKeyboardKey";
-            _lblKeyboardKey.Size = new Size(153, 41);
-            _lblKeyboardKey.Location = new Point(6, 63);
-            _lblKeyboardKey.TabIndex = 0;
-            _lblKeyboardKey.Text = "模拟按键:";
-            _lblKeyboardKey.TextAlign = ContentAlignment.MiddleLeft;
-            _lblKeyboardKey.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
-            _lblKeyboardInterval.Name = "_lblKeyboardInterval";
+            
+            _lblKeyboardOperate.Size = new Size(153, 41);
+            _lblKeyboardOperate.Location = new Point(6, 63);
+            _lblKeyboardOperate.TabIndex = 0;
+            _lblKeyboardOperate.Text = "模拟按键:";
+            _lblKeyboardOperate.TextAlign = ContentAlignment.MiddleLeft;
+            _lblKeyboardOperate.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            
             _lblKeyboardInterval.Size = new Size(153, 41);
             _lblKeyboardInterval.Location = new Point(6, 145);
             _lblKeyboardInterval.TabIndex = 0;
             _lblKeyboardInterval.Text = "时间间隔:";
             _lblKeyboardInterval.TextAlign = ContentAlignment.MiddleLeft;
             _lblKeyboardInterval.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
-            _lblKeyboardUnit.Name = "_lblKeyboardUnit";
+            
             _lblKeyboardUnit.Size = new Size(75, 41);
             _lblKeyboardUnit.Location = new Point(339, 145);
             _lblKeyboardUnit.TabIndex = 0;
             _lblKeyboardUnit.Text = "毫秒";
             _lblKeyboardHotkey.TextAlign = ContentAlignment.MiddleLeft;
             _lblKeyboardUnit.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
-            _lblKeyboardHotkey.Name = "_lblKeyboardHotkey";
+            
             _lblKeyboardHotkey.Size = new Size(118, 41);
             _lblKeyboardHotkey.Location = new Point(509, 104);
             _lblKeyboardHotkey.TabIndex = 0;
             _lblKeyboardHotkey.Text = "快捷键:";
             _lblKeyboardHotkey.TextAlign = ContentAlignment.MiddleLeft;
             _lblKeyboardHotkey.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
-            _txtKeyboardKey.Name = "_txtKeyboardKey";
-            _txtKeyboardKey.Size = new Size(175, 42);
-            _txtKeyboardKey.Location = new Point(160, 63);
-            _txtKeyboardKey.ReadOnly = true;
-            _txtKeyboardKey.TabIndex = 0;
-            _txtKeyboardKey.TabStop = false;
-            if (_operate != null)
+            
+            _txtKeyboardOperate.Size = new Size(175, 42);
+            _txtKeyboardOperate.Location = new Point(160, 63);
+            _txtKeyboardOperate.ReadOnly = true;
+            _txtKeyboardOperate.TabIndex = 0;
+            _txtKeyboardOperate.TabStop = false;
+            if (Operate != null)
             {
-                _txtKeyboardKey.Text = Utils.KeysSplice(_operate);
+                _txtKeyboardOperate.Text = Utils.KeysSplice(Operate);
             }
-
-            _txtKeyboardKey.TextAlign = HorizontalAlignment.Right;
-            _txtKeyboardKey.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
-
-            _txtKeyboardInterval.Name = "_txtKeyboardInterval";
+            _txtKeyboardOperate.TextAlign = HorizontalAlignment.Right;
+            _txtKeyboardOperate.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
+            
             _txtKeyboardInterval.Size = new Size(175, 42);
             _txtKeyboardInterval.Location = new Point(160, 142);
             _txtKeyboardInterval.TabIndex = 3;
-            _txtKeyboardInterval.Text = _interval;
+            _txtKeyboardInterval.Text = Interval;
             _txtKeyboardInterval.TextAlign = HorizontalAlignment.Right;
             _txtKeyboardInterval.Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, 134);
             _txtKeyboardInterval.KeyPress += (_, e) =>
@@ -209,22 +215,20 @@ namespace daydream_click
                         break;
                 }
             };
-
-            _txtKeyboardHotkey.Name = "_txtKeyboardHotkey";
+            
             _txtKeyboardHotkey.Size = new Size(120, 35);
             _txtKeyboardHotkey.Location = new Point(630, 115);
-            _txtKeyboardHotkey.Location = _hotkey != Keys.None ? new Point(630, 115) : new Point(630, 103);
+            _txtKeyboardHotkey.Location = Hotkey != Keys.None ? new Point(630, 115) : new Point(630, 103);
             _txtKeyboardHotkey.ReadOnly = true;
             _txtKeyboardHotkey.TabIndex = 0;
             _txtKeyboardHotkey.TabStop = false;
-            _txtKeyboardHotkey.Text = _hotkey != Keys.None ? KeyModifiers.Ctrl + "+" + _hotkey : _hotkey.ToString();
+            _txtKeyboardHotkey.Text = Hotkey != Keys.None ? KeyModifiers.Ctrl + "+" + Hotkey : Hotkey.ToString();
             _txtKeyboardHotkey.TextAlign = HorizontalAlignment.Center;
-            _txtKeyboardHotkey.Font = _hotkey != Keys.None
-                ? new Font("宋体", 6F, FontStyle.Regular, GraphicsUnit.Point, 134)
+            _txtKeyboardHotkey.Font = Hotkey != Keys.None
+                ? new Font("宋体", 8F, FontStyle.Regular, GraphicsUnit.Point, 134)
                 : new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
             _txtKeyboardHotkey.BorderStyle = BorderStyle.None;
-
-            _btnKeyboardKey.Name = "_btnKeyboardKey";
+            
             _btnKeyboardKey.Size = new Size(83, 42);
             _btnKeyboardKey.Location = new Point(339, 63);
             _btnKeyboardKey.Cursor = Cursors.Hand;
@@ -241,12 +245,11 @@ namespace daydream_click
                 var newOperate = getKeyBox.Operate;
                 if (newOperate != null)
                 {
-                    _txtKeyboardKey.Text = Utils.KeysSplice(newOperate);
-                    _operate = newOperate;
+                    _txtKeyboardOperate.Text = Utils.KeysSplice(newOperate);
+                    Operate = newOperate;
                 }
             };
-
-            _btnKeyboardRemove.Name = "_btnKeyboardRemove";
+            
             _btnKeyboardRemove.Size = new Size(83, 42);
             _btnKeyboardRemove.Location = new Point(650, 43);
             _btnKeyboardRemove.Cursor = Cursors.Hand;
@@ -255,9 +258,8 @@ namespace daydream_click
             _btnKeyboardRemove.Text = "删除";
             _btnKeyboardRemove.UseVisualStyleBackColor = false;
             _btnKeyboardRemove.BackColor = Color.Transparent;
-            _btnKeyboardRemove.Click += (_, _) => { removeEventHandler(_index); };
-
-            _btnKeyboardRename.Name = "_btnKeyboardRename";
+            _btnKeyboardRemove.Click += (_, _) => { removeEventHandler(Index); };
+            
             _btnKeyboardRename.Size = new Size(83, 42);
             _btnKeyboardRename.Location = new Point(472, 162);
             _btnKeyboardRename.Cursor = Cursors.Hand;
@@ -277,8 +279,7 @@ namespace daydream_click
                     GrpKeyboardItem.Text = inputPromptBox.Result;
                 }
             };
-
-            _btnKeyboardSetUp.Name = "_btnKeyboardSetUp";
+            
             _btnKeyboardSetUp.Size = new Size(83, 42);
             _btnKeyboardSetUp.Location = new Point(561, 162);
             _btnKeyboardSetUp.Cursor = Cursors.Hand;
@@ -289,23 +290,30 @@ namespace daydream_click
             _btnKeyboardSetUp.UseVisualStyleBackColor = false;
             _btnKeyboardSetUp.Click += (_, _) =>
             {
-                var setUpHotkeyBox =
-                    new SetUpHotkeyBox(GrpKeyboardItem.Text == string.Empty ? "设置" : GrpKeyboardItem.Text + "·设置",
-                        KeyModifiers.Ctrl, _hotkey);
-                setUpHotkeyBox.ShowDialog();
-                if (!setUpHotkeyBox.Flag) return;
-                _hotkey = setUpHotkeyBox.Hotkey;
-                _txtKeyboardHotkey.Text = _hotkey != Keys.None
-                    ? $"{KeyModifiers.Ctrl}+{Utils.KeysChangeChar(setUpHotkeyBox.Hotkey)}"
-                    : KeyModifiers.Ctrl.ToString();
-                _txtKeyboardHotkey.Location = _hotkey != Keys.None ? new Point(630, 115) : new Point(630, 103);
-                _txtKeyboardHotkey.Font = _hotkey != Keys.None
-                    ? new Font("宋体", 6F, FontStyle.Regular, GraphicsUnit.Point, 134)
-                    : new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
-                setUpSwitchHotkeyEventHandler(_index, _hotkey);
+                do
+                {
+                    var setUpHotkeyBox =
+                        new SetUpHotkeyBox(GrpKeyboardItem.Text == string.Empty ? "设置" : GrpKeyboardItem.Text + "·设置",
+                            KeyModifiers.Ctrl, Hotkey);
+                
+                    setUpHotkeyBox.ShowDialog();
+                
+                    if (!setUpHotkeyBox.Flag) return;
+                
+                    Hotkey = setUpHotkeyBox.Hotkey;
+                
+                    _txtKeyboardHotkey.Text = 
+                        Hotkey != Keys.None
+                            ? $"{KeyModifiers.Ctrl}+{Utils.KeysChangeChar(setUpHotkeyBox.Hotkey)}"
+                            : KeyModifiers.None.ToString();
+                
+                    _txtKeyboardHotkey.Location = Hotkey != Keys.None ? new Point(630, 115) : new Point(630, 103);
+                    _txtKeyboardHotkey.Font = Hotkey != Keys.None
+                        ? new Font("宋体", 8F, FontStyle.Regular, GraphicsUnit.Point, 134)
+                        : new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, 134);
+                } while (!setUpSwitchHotkeyEventHandler(Index, Hotkey));
             };
-
-            _btnKeyboardSwitch.Name = "_btnKeyboardSwitch";
+            
             _btnKeyboardSwitch.Size = new Size(83, 42);
             _btnKeyboardSwitch.Location = new Point(650, 162);
             _btnKeyboardSwitch.Cursor = Cursors.Hand;
@@ -317,46 +325,42 @@ namespace daydream_click
             _btnKeyboardSwitch.Click += (_, _) => { JobSwitch(); };
         }
 
-        public GroupBox GrpKeyboardItem { get; private set; }
+        [JsonIgnore] public GroupBox GrpKeyboardItem { get; private set; }
 
-        public Label LblKeyboardKey => _lblKeyboardKey;
+        [JsonIgnore] public Label LblKeyboardOperate => _lblKeyboardOperate;
 
-        public Label LblKeyboardInterval => _lblKeyboardInterval;
+        [JsonIgnore] public Label LblKeyboardInterval => _lblKeyboardInterval;
 
-        public Label LblKeyboardUnit => _lblKeyboardUnit;
+        [JsonIgnore] public Label LblKeyboardUnit => _lblKeyboardUnit;
 
-        public Label LblKeyboardHotkey => _lblKeyboardHotkey;
+        [JsonIgnore] public Label LblKeyboardHotkey => _lblKeyboardHotkey;
 
-        public TextBox TxtKeyboardKey => _txtKeyboardKey;
+        [JsonIgnore] public TextBox TxtKeyboardOperate => _txtKeyboardOperate;
 
-        public TextBox TxtKeyboardInterval => _txtKeyboardInterval;
+        [JsonIgnore] public TextBox TxtKeyboardInterval => _txtKeyboardInterval;
 
-        public TextBox TxtKeyboardHotkey => _txtKeyboardHotkey;
+        [JsonIgnore] public TextBox TxtKeyboardHotkey => _txtKeyboardHotkey;
 
-        public Button BtnKeyboardKey => _btnKeyboardKey;
+        [JsonIgnore] public Button BtnKeyboardKey => _btnKeyboardKey;
 
-        public Button BtnKeyboardRemove => _btnKeyboardRemove;
+        [JsonIgnore] public Button BtnKeyboardRemove => _btnKeyboardRemove;
 
-        public Button BtnKeyboardRename => _btnKeyboardRename;
+        [JsonIgnore] public Button BtnKeyboardRename => _btnKeyboardRename;
 
-        public Button BtnKeyboardSetUp => _btnKeyboardSetUp;
+        [JsonIgnore] public Button BtnKeyboardSetUp => _btnKeyboardSetUp;
 
-        public Button BtnKeyboardSwitch => _btnKeyboardSwitch;
+        [JsonIgnore] public Button BtnKeyboardSwitch => _btnKeyboardSwitch;
 
-        public int Index => _index;
+        public int Index { get; set; }
 
-        public string Name => _name;
+        public string Name { get; set; }
 
-        public List<Keys> Operate => _operate;
+        public List<Keys> Operate { get; set; }
 
-        public string Interval => _interval;
+        public string Interval { get; set; }
 
         public int HotkeyId { get; set; }
 
-        public Keys Hotkey
-        {
-            get => _hotkey;
-            set => _hotkey = value;
-        }
+        public Keys Hotkey { get; set; }
     }
 }

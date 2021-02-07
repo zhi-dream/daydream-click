@@ -1,4 +1,4 @@
-using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -10,49 +10,43 @@ namespace daydream_click
         private TextBox _txtInputPromptInputBox;
         private Button _btnInputPromptConfirm;
         private Button _btnInputPromptCancel;
-        
-        private readonly string _title;
-        private readonly string _message;
-        private readonly string _confirm;
-        private readonly string _cancel;
-        private readonly string _defaultValue;
 
         public InputPromptBox()
         {
-            _title = "标题";
-            _message =  "请输入信息：";
-            _confirm = "确认";
-            _cancel = "取消";
+            Title = "标题";
+            Message =  "请输入信息：";
+            Confirm = "确认";
+            Cancel = "取消";
             InitializeComponent();
         }
         
         public InputPromptBox(string defaultValue)
         {
-            _title = "标题";
-            _message =  "请输入信息：";
-            _defaultValue = defaultValue;
-            _confirm = "确认";
-            _cancel = "取消";
+            Title = "标题";
+            Message =  "请输入信息：";
+            DefaultValue = defaultValue;
+            Confirm = "确认";
+            Cancel = "取消";
             InitializeComponent();
         }
         
         public InputPromptBox(string title, string message, string defaultValue)
         {
-            _title = title;
-            _message = message;
-            _defaultValue = defaultValue;
-            _confirm = "确认";
-            _cancel = "取消";
+            Title = title;
+            Message = message;
+            DefaultValue = defaultValue;
+            Confirm = "确认";
+            Cancel = "取消";
             InitializeComponent();
         }
         
         public InputPromptBox(string title, string message, string defaultValue, string confirm, string cancel)
         {
-            _title = title;
-            _message = message;
-            _defaultValue = defaultValue;
-            _confirm = confirm;
-            _cancel = cancel;
+            Title = title;
+            Message = message;
+            DefaultValue = defaultValue;
+            Confirm = confirm;
+            Cancel = cancel;
             InitializeComponent();
         }
 
@@ -68,30 +62,27 @@ namespace daydream_click
             Controls.Add(_btnInputPromptConfirm);
             Controls.Add(_btnInputPromptCancel);
             
-            Name = "_inputPrompt";
+            Icon = (Icon) new ComponentResourceManager(typeof(MainForm)).GetObject("$this.Icon");
             ClientSize = new Size(450, 200);
             StartPosition = FormStartPosition.CenterScreen;
             MaximizeBox = false;
             MinimizeBox = false;
-            Text = _title;
-
-            _lblInputPromptMessage.Name = "_lblInputPromptMessage";
+            Text = Title;
+            
             _lblInputPromptMessage.Size = new Size(398, 51);
             _lblInputPromptMessage.Location = new Point(25, 10);
             _lblInputPromptMessage.TabIndex = 0;
-            _lblInputPromptMessage.Text = _message;
-
-            _txtInputPromptInputBox.Name = "_txtInputPromptInputBox";
+            _lblInputPromptMessage.Text = Message;
+            
             _txtInputPromptInputBox.Size = new Size(398, 42);
             _txtInputPromptInputBox.Location = new Point(25, 65);
             _txtInputPromptInputBox.TabIndex = 1;
-            _txtInputPromptInputBox.Text = _defaultValue;
-
-            _btnInputPromptConfirm.Name = "_btnInputPromptConfirm";
+            _txtInputPromptInputBox.Text = DefaultValue;
+            
             _btnInputPromptConfirm.Size = new Size(175, 50);
             _btnInputPromptConfirm.Location = new Point(25, 125);
             _btnInputPromptConfirm.TabIndex = 2;
-            _btnInputPromptConfirm.Text = _confirm;
+            _btnInputPromptConfirm.Text = Confirm;
             _btnInputPromptConfirm.UseVisualStyleBackColor = true;
             _btnInputPromptConfirm.Click += (_, _) =>
             {
@@ -99,12 +90,11 @@ namespace daydream_click
                 Result = _txtInputPromptInputBox.Text;
                 Close();
             };
-
-            _btnInputPromptCancel.Name = "_btnInputPromptCancel";
+            
             _btnInputPromptCancel.Size = new Size(175, 50);
             _btnInputPromptCancel.Location = new Point(249, 125);
             _btnInputPromptCancel.TabIndex = 3;
-            _btnInputPromptCancel.Text = _cancel;
+            _btnInputPromptCancel.Text = Cancel;
             _btnInputPromptCancel.UseVisualStyleBackColor = true;
             _btnInputPromptCancel.Click += (_, _) =>
             {
@@ -123,15 +113,15 @@ namespace daydream_click
 
         public Button BtnInputPromptCancel => _btnInputPromptCancel;
 
-        public string Title => _title;
+        public string Title { get; }
 
-        public string Message => _message;
+        public string Message { get; }
 
-        public string DefaultValue => _defaultValue;
-        
-        public string Confirm => _confirm;
+        public string DefaultValue { get; }
 
-        public string Cancel => _cancel;
+        public string Confirm { get; }
+
+        public string Cancel { get; }
 
         public bool Flag { get; private set; }
 
