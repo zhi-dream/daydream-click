@@ -4,7 +4,7 @@ using System.Windows.Forms;
 
 namespace daydream_click
 {
-    public class Hotkey
+    public static class Hotkey
     {
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool RegisterHotKey(

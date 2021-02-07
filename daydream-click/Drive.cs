@@ -89,26 +89,19 @@ namespace daydream_click
         public delegate int pDD_str(string str);
 
         public delegate int pDD_todc(int vkcode);
-
-        //Mouse button 
+        
         public pDD_btn Btn;
-
-        //Mouse wheel
+        
         public pDD_whl Whl;
-
-        //Mouse move abs.
+        
         public pDD_mov Mov;
-
-        //Mouse move rel.
+        
         public pDD_movR MovR;
-
-        //Keyboard
+        
         public pDD_key Key;
-
-        //Input visible char
+        
         public pDD_str Str;
-
-        //VK to ddcode
+        
         public pDD_todc Todc;
 
         private IntPtr _mHinst;
