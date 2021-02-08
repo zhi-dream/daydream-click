@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -8,8 +9,12 @@ using Newtonsoft.Json;
 
 namespace daydream_click
 {
+    [SuppressMessage("ReSharper", "PossibleNullReferenceException")]
     public partial class MainForm : Form
     {
+        
+        private ImitateItem _imitateItem;
+        
         public MainForm()
         {
             InitializeComponent();
@@ -27,45 +32,46 @@ namespace daydream_click
             }
             else
             {
-                var imitateItem = new ImitateItem();
                 try
                 {
-                    imitateItem = JsonConvert.DeserializeObject<ImitateItem>(File.ReadAllText("imitateItem.json"));
+                    _imitateItem = JsonConvert.DeserializeObject<ImitateItem>(File.ReadAllText("imitateItem.json"));
+                    
+                    foreach (var mouseImitateItem in from mouseImitate in _imitateItem.MouseImitateItems.Values
+                        let count = pnlMouse.Controls.Count
+                        select new MouseImitateItem(count * 220, mouseImitate.Index, mouseImitate.Name,
+                            mouseImitate.Operate, mouseImitate.PositionX, mouseImitate.PositionY, mouseImitate.Interval,
+                            mouseImitate.Hotkey, RemoveMouseEventHandler,
+                            SetUpMouseSwitchHotkeyEventHandler))
+                    {
+                        Hotkey.RegisterHotKey(Handle, mouseImitateItem.HotkeyId, KeyModifiers.Alt,
+                            mouseImitateItem.Hotkey);
+
+                        pnlMouse.Controls.Add(mouseImitateItem.GrpMouseItem);
+
+                        _imitateItem.MouseImitateItems.Add(mouseImitateItem.Index, mouseImitateItem);
+                    }
+
+                    foreach (var keyboardImitateItem in from keyboardImitate in _imitateItem.KeyboardImitateItems.Values
+                        let count = pnlKeyboard.Controls.Count
+                        select new KeyboardImitateItem(count * 220, keyboardImitate.Index, keyboardImitate.Name,
+                            keyboardImitate.Operate, keyboardImitate.Interval, keyboardImitate.Hotkey,
+                            RemoveKeyboardEventHandler,
+                            SetUpKeyBoardSwitchHotkeyEventHandler))
+                    {
+                        Hotkey.RegisterHotKey(Handle, keyboardImitateItem.HotkeyId, KeyModifiers.Ctrl,
+                            keyboardImitateItem.Hotkey);
+
+                        pnlKeyboard.Controls.Add(keyboardImitateItem.GrpKeyboardItem);
+
+                        _imitateItem.KeyboardImitateItems.Add(keyboardImitateItem.Index, keyboardImitateItem);
+                    }
+                    
                 }
                 catch (Exception)
                 {
                     Initial();
                 }
                 
-                foreach (var mouseImitateItem in from mouseImitate in imitateItem.MouseImitateItems.Values
-                    let count = pnlMouse.Controls.Count
-                    select new MouseImitateItem(count * 220, mouseImitate.Index, mouseImitate.Name,
-                        mouseImitate.Operate, mouseImitate.PositionX, mouseImitate.PositionY, mouseImitate.Interval,
-                        mouseImitate.Hotkey, RemoveMouseEventHandler,
-                        SetUpMouseSwitchHotkeyEventHandler))
-                {
-                    Hotkey.RegisterHotKey(Handle, mouseImitateItem.HotkeyId, KeyModifiers.Alt,
-                        mouseImitateItem.Hotkey);
-
-                    pnlMouse.Controls.Add(mouseImitateItem.GrpMouseItem);
-
-                    _imitateItem.MouseImitateItems.Add(mouseImitateItem.Index, mouseImitateItem);
-                }
-
-                foreach (var keyboardImitateItem in from keyboardImitate in imitateItem.KeyboardImitateItems.Values
-                    let count = pnlKeyboard.Controls.Count
-                    select new KeyboardImitateItem(count * 220, keyboardImitate.Index, keyboardImitate.Name,
-                        keyboardImitate.Operate, keyboardImitate.Interval, keyboardImitate.Hotkey,
-                        RemoveKeyboardEventHandler,
-                        SetUpKeyBoardSwitchHotkeyEventHandler))
-                {
-                    Hotkey.RegisterHotKey(Handle, keyboardImitateItem.HotkeyId, KeyModifiers.Ctrl,
-                        keyboardImitateItem.Hotkey);
-
-                    pnlKeyboard.Controls.Add(keyboardImitateItem.GrpKeyboardItem);
-
-                    _imitateItem.KeyboardImitateItems.Add(keyboardImitateItem.Index, keyboardImitateItem);
-                }
             }
         }
 
@@ -87,9 +93,9 @@ namespace daydream_click
             }
 
             File.WriteAllText("imitateItem.json", JsonConvert.SerializeObject(_imitateItem));
+            
+            Environment.Exit(0);
         }
-
-        private readonly ImitateItem _imitateItem;
 
         private void Initial()
         {
@@ -122,6 +128,8 @@ namespace daydream_click
 
         private void btnMouseAppend_Click(object sender, EventArgs e)
         {
+            pnlMouse.AutoScrollPosition = new Point(0, 0);
+            
             var count = _imitateItem.MouseImitateItems.Count;
             
             var mouseImitateItem = new MouseImitateItem(count * 220, _imitateItem.NextMouseItemIndex,
@@ -133,6 +141,8 @@ namespace daydream_click
             _imitateItem.MouseImitateItems.Add(_imitateItem.NextMouseItemIndex, mouseImitateItem);
             
             _imitateItem.NextMouseItemIndex += 1;
+            
+            pnlMouse.VerticalScroll.Value = pnlMouse.VerticalScroll.Maximum;
         }
 
         private void RemoveMouseEventHandler(int removeIndex)
@@ -185,13 +195,20 @@ namespace daydream_click
 
         private void btnKeyboardAppend_Click(object sender, EventArgs e)
         {
+            pnlKeyboard.AutoScrollPosition = new Point(0, 0);
+            
             var count = _imitateItem.KeyboardImitateItems.Count;
+            
             var keyboardImitateItem =
                 new KeyboardImitateItem(count * 220, _imitateItem.NextKeyboardItemIndex, RemoveKeyboardEventHandler,
                     SetUpKeyBoardSwitchHotkeyEventHandler);
             pnlKeyboard.Controls.Add(keyboardImitateItem.GrpKeyboardItem);
+            
             _imitateItem.KeyboardImitateItems.Add(_imitateItem.NextKeyboardItemIndex, keyboardImitateItem);
+            
             _imitateItem.NextKeyboardItemIndex += 1;
+            
+            pnlKeyboard.VerticalScroll.Value = pnlKeyboard.VerticalScroll.Maximum;
         }
 
         private void RemoveKeyboardEventHandler(int removeIndex)

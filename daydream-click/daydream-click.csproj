@@ -5,6 +5,7 @@
         <TargetFramework>net5.0-windows</TargetFramework>
         <RootNamespace>daydream_click</RootNamespace>
         <UseWindowsForms>true</UseWindowsForms>
+        <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
 
     <ItemGroup>

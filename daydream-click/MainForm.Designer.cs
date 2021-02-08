@@ -63,10 +63,10 @@ namespace daydream_click
             // 
             this.pageMouse.Controls.Add(this.pnlMouseParent);
             this.pageMouse.Controls.Add(this.btnMouseAppend);
-            this.pageMouse.Location = new System.Drawing.Point(10, 48);
+            this.pageMouse.Location = new System.Drawing.Point(10, 56);
             this.pageMouse.Name = "pageMouse";
             this.pageMouse.Padding = new System.Windows.Forms.Padding(3);
-            this.pageMouse.Size = new System.Drawing.Size(774, 1080);
+            this.pageMouse.Size = new System.Drawing.Size(774, 1072);
             this.pageMouse.TabIndex = 0;
             this.pageMouse.Text = "鼠标模拟";
             this.pageMouse.UseVisualStyleBackColor = true;
@@ -104,10 +104,10 @@ namespace daydream_click
             // 
             this.pageKeyboard.Controls.Add(this.pnlKeyboardParent);
             this.pageKeyboard.Controls.Add(this.btnKeyboardAppend);
-            this.pageKeyboard.Location = new System.Drawing.Point(10, 48);
+            this.pageKeyboard.Location = new System.Drawing.Point(10, 56);
             this.pageKeyboard.Name = "pageKeyboard";
             this.pageKeyboard.Padding = new System.Windows.Forms.Padding(3);
-            this.pageKeyboard.Size = new System.Drawing.Size(774, 1080);
+            this.pageKeyboard.Size = new System.Drawing.Size(774, 1072);
             this.pageKeyboard.TabIndex = 1;
             this.pageKeyboard.Text = "键盘模拟";
             this.pageKeyboard.UseVisualStyleBackColor = true;
@@ -142,11 +142,14 @@ namespace daydream_click
             // 
             // lblClosePrompt
             // 
-            this.lblClosePrompt.Location = new System.Drawing.Point(440, 20);
+            this.lblClosePrompt.Font = new System.Drawing.Font("宋体", 7F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.lblClosePrompt.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.lblClosePrompt.Location = new System.Drawing.Point(510, 25);
             this.lblClosePrompt.Name = "lblClosePrompt";
-            this.lblClosePrompt.Size = new System.Drawing.Size(375, 35);
+            this.lblClosePrompt.Size = new System.Drawing.Size(286, 35);
             this.lblClosePrompt.TabIndex = 1;
             this.lblClosePrompt.Text = "【Shift+D】结束所有任务";
+            this.lblClosePrompt.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // MainForm
             // 
@@ -155,7 +158,8 @@ namespace daydream_click
             this.ClientSize = new System.Drawing.Size(818, 1162);
             this.Controls.Add(this.lblClosePrompt);
             this.Controls.Add(this.tabMenu);
-            this.Icon = ((System.Drawing.Icon) (resources.GetObject("$this.Icon")));
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -168,6 +172,7 @@ namespace daydream_click
             this.pageKeyboard.ResumeLayout(false);
             this.pnlKeyboardParent.ResumeLayout(false);
             this.ResumeLayout(false);
+
         }
 
         private System.Windows.Forms.Label lblClosePrompt;

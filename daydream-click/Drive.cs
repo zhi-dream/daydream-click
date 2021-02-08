@@ -13,13 +13,13 @@ namespace daydream_click
 
             if (Dd.Load("DDHID64.dll") != 1)
             {
-                MessageBox.Show("驱动加载失败。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("驱动加载失败。\n详细原因请查看【使用说明书.docx】", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
             
             if (Dd.Btn(0) != 1)
             {
-                MessageBox.Show("驱动初始化失败。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("驱动初始化失败。\n详细原因请查看【使用说明书.docx】", "提示", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
